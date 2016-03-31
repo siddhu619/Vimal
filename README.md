@@ -25,9 +25,12 @@
 
 1. Removes non-ascii as well as quotes and escape character which used to stop the execution of code.
 2. New Feature Multiprocessing added to send data to server in multi processing manner
+    
     Currently we are using 15 simulataneous processes to acomplish our job which I find is optimized.
+    
     If we want you can increase it but it depends upon the number of Cores you have in your system and How much the 
         server can handle.
+    
     Currently is process requires 50MB of RAM so manage your memory accordingly
 3. After sending the data to the server the codes writes the response as well as the record for which it send in the
     below format:
