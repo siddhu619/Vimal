@@ -9,20 +9,26 @@ global ReadCount
 ReadCount =1
 global counter
 wb = load_workbook('F:\\mumbai.xlsx',data_only=True)
-worksheet = wb.get_sheet_by_name("result_ok_7011_2016-03-03 (1)")
+worksheet = wb.get_sheet_by_name("Sheet1")
 counter =  worksheet.get_highest_row()
 flag =0
+# truncates the result for fresh edit
+global Response
+Response = []
+global f1
+f1 = open('E:\\ResultJson.txt','a')
 
 
 
-
+#!# Removes quotes, excape character and non-ascii characters from the address field
 
 def RemoveNonAscii(address): # Removes non-asci character from the string and replaces it with blank string
-
+    address= address.replace('"','')
+    address= address.replace('\\','-')
     return ''.join([k if ord(k) < 128 else '' for k in address])
 
 
-
+#@# Read 1000 records from the file at a time
 def Read1000(start , end): # Reading 1000 lines form excel file
     print 'Collecting the data  from Excel'
 
@@ -53,7 +59,7 @@ def Read1000(start , end): # Reading 1000 lines form excel file
     gender = []
     Fname= []
     Lname = []
-    ReadCount =1
+
 
 
 
@@ -79,11 +85,9 @@ def Read1000(start , end): # Reading 1000 lines form excel file
         if ReadCount > counter:
             print 'ReadCount',ReadCount
             break
-    #print 'jgfsdfghjkjhv',start, end
-    #print ReadCount
-    #print name[0]
-    #print 'sadfsdfsdfsdfsdsdfsdf',len(email)
+
     for n in range(len(email)):
+
         if name[n] == None:
             name[n]= ''
 
@@ -95,8 +99,7 @@ def Read1000(start , end): # Reading 1000 lines form excel file
 
 
         phone[n] = str(phone[n]).replace(" ",'').replace('-','')
-        #print len(name[n].split(' '))
-        #print name[n]
+
         if len(name[n].split(' ')) >= 2:
             d = name[n].split(' ')
             #print d[0]
@@ -109,33 +112,47 @@ def Read1000(start , end): # Reading 1000 lines form excel file
 
     name = []
 
-def PostData(regDetailparam):
-    with open('E:\\ResultJson.txt','a')as f:
-        #print len(regDetailparam)
-        print regDetailparam
 
-        #f.truncate()
+#!# Muliprocessingly sends data to service/server
+def PostData(regDetailparam):
+        global Response
+
+        print regDetailparam
         with requests.Session() as s:
+
             m = s.post("https://app.ship2myid.com/ship2myid/client/rest/webclient/autoregister_full?reg_source=email",data=regDetailparam,headers = {"Accept": "application/json", "Content-type":"application/json"}, verify=False)
             print m.status_code, datetime.datetime.now()
             print m.text
 
-            resp = json.loads(str(m.text))
-            #f.write(resp['Error.status'] +' : '+ resp['reason']+' : '+email[j]+'\n')
-            f.write(json.loads(str(regDetailparam))['RegistrationDetails'])
 
+            Response.append(str(json.loads(str(regDetailparam))['RegistrationDetails'])+'$$$$$$$$$$'+str( m.text))
+
+#@# Method to write Response in a file
+def ResponseWrite():
+    global Response
+    with open('E:\\ResultJson.txt','a')as f:
+        for r in Response:
+            print '*****************************************************************************'
+            rsp = r
+            print 'Writing Reponse to file '+rsp
+            f.write(rsp)
+            f.write('\n')
+    Response = []
     f.close()
+
+
 
 
 
 def main():
     global counter
+    #@# ReadCount is the No of records processed, counter is the maximum no record present in the file
 
     if ReadCount > counter:
         exit()
-    #print 'sadfsfsdf',ReadCount
-    global flag
 
+    global flag
+    #@# Reading 1000 records from the file and processing it
     if flag ==0:
         Read1000(ReadCount ,ReadCount + 999)
         flag =1
@@ -144,46 +161,35 @@ def main():
     else:
         Read1000(ReadCount,ReadCount + 1000)
     with open('E:\\ResultJson.txt','a')as f:
-        #f.truncate()
+
         regDetailparam =[]
 
 
-        for j in range(len(email)):
+        #for j in range(len(email)):
+        for j in range(30):
 
-            #print 'asdfsdfsdfsdfs',j
+            ### Making List of 1000 json to be posted to server at a time
             regDetails= '{"birthday":"'+str(dob[j]).replace('-','/')+'", "lastName":"'+ str(Lname[j])+'", "firstName": "'+str(Fname[j])+'","password":"ZO25L2", "email_address" : "'+str(email[j])+'","education": "'+str(edu[j])+'","gender":"'+str(gender[j])+'","referredBy": "","phone_number": "'+ str(phone[j])+'","newFlow": true' +'}'
 
             addressDetails= '{"country_code": 356, "is_primary": true, "city":"'+str(city[j])+'", "address_1": "'+RemoveNonAscii(address[j])+'","address_type_id":"1", "state_code":3880,"zip_code": "400096"}'
 
-            regDetailparam.append('{"extraGoogleParams": {} ,"addressDetails"  :'+ addressDetails+ ', "RegistrationDetails":  '+ str(regDetails) +'}')
-            #print regDetailparam
+            regDetailparam1 = '{"extraGoogleParams": {} ,"addressDetails"  :'+ addressDetails+ ', "RegistrationDetails":  '+ str(regDetails) +'}'
+            regDetailparam.append(regDetailparam1)
 
-        p = Pool(5)
+
+        #Mention the number of process to post data on the service
+        p = Pool(15)
         p.map(PostData,regDetailparam)
+        print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+        ResponseWrite()
 
-                #f.write(str(j)+'email[j]'+email[j]+'\n')
+
+
+
     f.close()
 
-
-    '''
-    with open('E:\\ResultJson.txt','r')as f1:
-        FailedCount = 0
-        for line in f1:
-
-            if line.find('failure') >= 0:
-                print line
-                FailedCount =+1
-                #print FailedCount
-        print FailedCount
-        #print 'asdfsdfsdf',ReadCount
-        '''
-    #main()
-    '''
-        if FailedCount == 0:
-            main()
-        else:
-            exit()
-        '''
+# Recurssive call of main untill all records are processed!!
+    main()
 
 
 
