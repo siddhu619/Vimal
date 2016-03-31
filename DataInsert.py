@@ -126,10 +126,14 @@ def PostData(regDetailparam):
 
 
             Response.append(str(json.loads(str(regDetailparam))['RegistrationDetails'])+'$$$$$$$$$$'+str( m.text))
+            print 'sjsjfjsfsdj'
+            print len(Response),Response
+            return str(json.loads(str(regDetailparam))['RegistrationDetails'])+'$$$$$$$$$$'+str( m.text)
 
 #@# Method to write Response in a file
-def ResponseWrite():
-    global Response
+def ResponseWrite(Response):
+
+    print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     print len(Response),Response
     with open('E:\\ResultJson.txt','a')as f:
         for r in Response:
@@ -147,6 +151,7 @@ def ResponseWrite():
 
 def main():
     global counter
+
     #@# ReadCount is the No of records processed, counter is the maximum no record present in the file
 
     if ReadCount > counter:
@@ -166,8 +171,8 @@ def main():
         regDetailparam =[]
 
 
-        #for j in range(len(email)):
-        for j in range(30):
+        for j in range(len(email)):
+
 
             ### Making List of 1000 json to be posted to server at a time
             regDetails= '{"birthday":"'+str(dob[j]).replace('-','/')+'", "lastName":"'+ str(Lname[j])+'", "firstName": "'+str(Fname[j])+'","password":"ZO25L2", "email_address" : "'+str(email[j])+'","education": "'+str(edu[j])+'","gender":"'+str(gender[j])+'","referredBy": "","phone_number": "'+ str(phone[j])+'","newFlow": true' +'}'
@@ -180,9 +185,8 @@ def main():
 
         #Mention the number of process to post data on the service
         p = Pool(15)
-        p.map(PostData,regDetailparam)
-        print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-        ResponseWrite()
+        list = p.map(PostData,regDetailparam)
+        ResponseWrite(list)
 
 
 
