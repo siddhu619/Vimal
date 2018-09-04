@@ -38,6 +38,6 @@
 4. I am planning to write another script which excuted after the above code executes to read all the user records  
     and connect to DB to verify if the data has been inserted properly
     
-    To accomplish the above task I need you DB details as well as crendentail.
+    
 
 
